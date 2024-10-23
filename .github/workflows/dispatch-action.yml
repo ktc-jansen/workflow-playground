@@ -1,0 +1,29 @@
+# .github/workflows/dispatch-action.yml
+name: Dispatch Action
+
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: 'Your name'
+        required: true
+        type: string
+
+run-name: Deploy ${{ github.event.inputs.branch }} to ${{ github.event.inputs.env }}
+
+jobs:
+  action:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+      - run: npm install dxp-workflow-util@latest
+      - name: Generate Tag
+        id: generate-tag-script
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { greet } = require('dxp-workflow-util');
+            const greeting = greet('${{ github.event.inputs.name }}');
+            core.info(`Greeting: ${greeting}`);
