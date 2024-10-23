@@ -1,0 +1,46 @@
+# .github/workflows/dispatch-action.yml
+name: Dispatch Action
+
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: 'Your name'
+        required: true
+        type: string
+
+jobs:
+  action:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+      - run: npm install dxp-workflow-util@latest
+      - name: test-imported-script
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { greet } = require('dxp-workflow-util');
+            const greeting = greet('${{ github.event.inputs.name }}');
+            core.info(`Greeting: ${greeting}`);
+
+      - name: test-get-latest-tag
+        uses: actions/github-script@v7
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          script: |
+            const token = process.env.GITHUB_TOKEN;
+            const { getTagByPrefix } = require('dxp-workflow-util');
+            // getTagByPrefix(token: string, owner: string, repo: string, prefix: string)
+            const tag1 = await getTagByPrefix(token, context.repo.owner, context.repo.repo, 'rel-v1');
+            core.info(`Latest tag: ${tag1}`);
+            
+            // second try with different prefix, should be failed
+            try {
+              const tag2 = await getTagByPrefix(token, context.repo.owner, context.repo.repo, 'xxx');
+              core.info(`Latest tag: ${tag2}`);
+            } catch (error) {
+              core.info(`Error: ${error.message}`);
+            }
